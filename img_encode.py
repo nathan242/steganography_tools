@@ -103,8 +103,8 @@ if len(args) != 1:
     sys.stderr.write("No input file\n")
     sys.exit(1)
 
-if type(encode) != type(outfilename):
-    sys.stderr.write("For encoding both an output file (-o) and data (-d) must be set\n")
+if encode is not None and outfilename is None:
+    sys.stderr.write("No output filename specified (-o)\n")
     sys.exit(1)
 
 try:
@@ -113,7 +113,10 @@ except:
     sys.stderr.write("Cannot open input image\n")
     sys.exit(2)
 
-if encode is not None:
+if outfilename is not None:
+    if encode is None:
+        encode = sys.stdin.read()
+
     try:
         encodeData(infile, outfilename, encode)
     except:
@@ -125,6 +128,4 @@ else:
     except:
         sys.stderr.write("Failed to decode data\n")
         sys.exit(3)
-
-
 
