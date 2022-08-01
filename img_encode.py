@@ -6,7 +6,10 @@ from PIL import Image
 import numpy
 
 def help():
-    print('HELP')
+    print('Image steganography tool.')
+    print('Usage: '+sys.argv[0]+ ' [OPTIONS] <input file>')
+    print(' -o <file> Output file. If set will encode data.')
+    print(' -d <data> Data to encode. If not set will use stdin.')
 
 def encodeData(infile, outfilename, encode):
     arr = numpy.array(infile)
