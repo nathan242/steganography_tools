@@ -13,28 +13,27 @@ def help():
 
 def encodeData(infile, outfilename, encode):
     arr = numpy.array(infile)
-
-    binary = []
-
-    for char in encode:
-        byte = format(ord(char), '08b')
-        binary.append(byte)
-
-    binary.append('00000000')
+    encode += '\0'
 
     x = 0
     y = 0
     c = 0
-    for byte in binary:
-        for bit in byte:
+    for char in encode:
+        bit = 128
+        while bit != 0:
             value = arr[y][x][c]
-            if value % 2 != int(bit) % 2:
+            if value % 2 != int(ord(char) & bit == bit):
                 if value > 127:
                     value -= 1
                 else:
                     value += 1
 
             arr[y][x][c] = value
+
+            if bit == 1:
+                bit = 0
+            else:
+                bit = int(bit/2)
 
             c += 1
             if c > 2:
@@ -44,7 +43,7 @@ def encodeData(infile, outfilename, encode):
                     x = 0
                     y += 1
                     if y > infile.size[1]-1:
-                        raise Exception("Out of space in image")
+                        raise Exception('Out of space in image')
 
     out = Image.fromarray(arr)
     out.save(outfilename)
@@ -52,9 +51,9 @@ def encodeData(infile, outfilename, encode):
 def decodeData(infile):
     arr = numpy.array(infile)
 
-    data = ''
-    binary = []
-    raw = ''
+    chars = []
+    char = 0
+    bit = 128
     done = False
 
     for y in arr:
@@ -66,19 +65,21 @@ def decodeData(infile):
                 break
 
             for c in x:
-                raw += str(int(c % 2 != 0))
-                if len(raw) == 8:
-                    if raw == '00000000':
+                if c % 2 != 0:
+                    char += bit
+
+                if bit == 1:
+                    if char == 0:
                         done = True
                         break
 
-                    binary.append(raw)
-                    raw = ''
+                    chars.append(chr(char))
+                    char = 0
+                    bit = 128
+                else:
+                    bit = int(bit/2)
 
-    for byte in binary:
-        data += chr(int(byte, 2))
-
-    return data
+    return ''.join(chars)
 
 encode = None
 outfilename = None
@@ -122,13 +123,13 @@ if outfilename is not None:
 
     try:
         encodeData(infile, outfilename, encode)
-    except:
-        sys.stderr.write("Failed to encode data\n")
+    except Exception as err:
+        sys.stderr.write("Failed to encode data: "+str(err)+"\n")
         sys.exit(3)
 else:
     try:
         print(decodeData(infile))
-    except:
-        sys.stderr.write("Failed to decode data\n")
+    except Exception as err:
+        sys.stderr.write("Failed to encode data: "+str(err)+"\n")
         sys.exit(3)
 
