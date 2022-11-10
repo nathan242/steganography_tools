@@ -86,14 +86,8 @@ def decodeData(infile):
     return ''.join(chars)
 
 def getMaxDataSize(infile):
-    size = 0
     arr = numpy.array(infile)
-
-    for y in arr:
-        for x in y:
-            size += len(x)
-
-    return int(size/8)
+    return int(((infile.size[0]*infile.size[1])*len(arr[0][0]))/8)
 
 encode = None
 outfilename = None
