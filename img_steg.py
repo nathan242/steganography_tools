@@ -8,6 +8,7 @@ import numpy
 def help():
     print('Image steganography tool.')
     print('Usage: '+sys.argv[0]+ ' [OPTIONS] <input file>')
+    print(' -s Show capacity of image in bytes.')
     print(' -o <file> Output file. If set will encode data.')
     print(' -d <data> Data to encode. If not set will use stdin.')
 
@@ -18,6 +19,9 @@ def encodeData(infile, outfilename, encode):
     x = 0
     y = 0
     c = 0
+
+    colours = len(arr[y][x])-1
+
     for char in encode:
         bit = 128
         while bit != 0:
@@ -36,7 +40,7 @@ def encodeData(infile, outfilename, encode):
                 bit = int(bit/2)
 
             c += 1
-            if c > 2:
+            if c > colours:
                 c = 0
                 x += 1
                 if x > infile.size[0]-1:
@@ -81,11 +85,22 @@ def decodeData(infile):
 
     return ''.join(chars)
 
+def getMaxDataSize(infile):
+    size = 0
+    arr = numpy.array(infile)
+
+    for y in arr:
+        for x in y:
+            size += len(x)
+
+    return int(size/8)
+
 encode = None
 outfilename = None
+getsize = False
 
 try:
-    optlist, args = getopt.getopt(sys.argv[1:], 'ho:d:')
+    optlist, args = getopt.getopt(sys.argv[1:], 'hso:d:')
 except getopt.GetoptError as err:
     sys.stderr.write(str(err)+"\n")
     help()
@@ -95,6 +110,8 @@ for opt, arg in optlist:
     if opt == '-h':
         help()
         sys.exit(0)
+    elif opt == '-s':
+        getsize = True
     elif opt == '-o':
         outfilename = arg
     elif opt == '-d':
@@ -117,7 +134,9 @@ except:
     sys.stderr.write("Cannot open input image\n")
     sys.exit(2)
 
-if outfilename is not None:
+if getsize is True:
+    print(getMaxDataSize(infile))
+elif outfilename is not None:
     if encode is None:
         encode = sys.stdin.read()
 
