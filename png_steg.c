@@ -163,9 +163,9 @@ void encode_data(png_bytep **row_pointers, unsigned int height, size_t row_bytes
                 bit = bit/2;
             }
 
-            if (++x > row_bytes) {
+            if (++x == row_bytes) {
                 x = 0;
-                if (y++ > height) {
+                if (++y == height) {
                     return; // OUT OF SPACE;
                 }
             }
@@ -281,105 +281,3 @@ int main(int argc, char *argv[])
 
     return 0;
 }
-
-// int old_main()
-// {
-//     FILE *test_png;
-//     unsigned char sig[8];
-//     png_structp png_ptr;
-//     png_infop info_ptr;
-//     unsigned int width;
-//     unsigned int height;
-//     int bit_depth;
-//     int colour_type;
-//     png_bytep *row_pointers;
-//     size_t rowbytes;
-
-//     FILE *out_png;
-//     png_structp png_ptr_write;
-//     png_infop info_ptr_write;
-
-//     test_png = fopen("test.png", "r");
-
-//     fread(sig, 1, 8, test_png);
-
-//     if (!png_check_sig(sig, 8)) {
-//         return 1;
-//     }
-
-//     // Do NULL check
-//     png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-//     info_ptr = png_create_info_struct(png_ptr);
-
-//     // if (setjmp(png_ptr->jmpbuf)) {
-//     if (setjmp(png_jmpbuf(png_ptr))) {
-//         png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
-//         return 2;
-//     }
-
-//     png_init_io(png_ptr, test_png);
-//     png_set_sig_bytes(png_ptr, 8);
-//     png_read_info(png_ptr, info_ptr);
-
-//     png_get_IHDR(png_ptr, info_ptr, &width, &height, &bit_depth, &colour_type, NULL, NULL, NULL);
-
-//     // Allocate memory for image
-//     rowbytes = png_get_rowbytes(png_ptr, info_ptr);
-//     row_pointers = malloc(sizeof(png_bytep) * height);
-//     for (int i = 0; i < height; i++) {
-//         row_pointers[i] = malloc(rowbytes);
-//     }
-
-//     png_read_image(png_ptr, row_pointers);
-//     png_read_end(png_ptr, NULL);
-
-//     // Modify image
-//     for (int i = 0; i < height; i++) {
-//         for (int b = 0; b < rowbytes; b++) {
-//             row_pointers[i][b] += 20;
-//         }
-//     }
-
-//     // Save new image
-//     out_png = fopen("out.png", "w+");
-
-//     // Do NULL check
-//     png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-//     info_ptr = png_create_info_struct(png_ptr);
-
-//     // Set up error handling
-//     if (setjmp(png_jmpbuf(png_ptr))) {
-//         png_destroy_write_struct(&png_ptr, &info_ptr);
-//         return 1;
-//     }
-
-//     png_init_io(png_ptr, out_png);
-
-//     // Set image metadata (IHDR)
-//     png_set_IHDR(
-//         png_ptr, info_ptr,
-//         width, height,
-//         bit_depth,                          // Bit depth
-//         colour_type,        // Color type
-//         PNG_INTERLACE_NONE,
-//         PNG_COMPRESSION_TYPE_DEFAULT,
-//         PNG_FILTER_TYPE_DEFAULT
-//     );
-
-//     // Write header and image data
-//     png_write_info(png_ptr, info_ptr);
-//     png_write_image(png_ptr, row_pointers);
-//     png_write_end(png_ptr, NULL);
-
-//     // Cleanup
-//     png_destroy_write_struct(&png_ptr, &info_ptr);
-
-//     // Clean up
-//     for (int i = 0; i < height; i++) {
-//         free(row_pointers[i]);
-//     }
-
-//     free(row_pointers);
-
-//     return 0;
-// }
