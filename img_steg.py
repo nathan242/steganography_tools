@@ -25,6 +25,9 @@ def encodeData(infile, outfilename, encode):
     for char in encode:
         bit = 128
         while bit != 0:
+            if y > infile.size[1]-1:
+                raise Exception('Out of space in image')
+
             value = arr[y][x][c]
             if value % 2 != int(ord(char) & bit == bit):
                 if value > 127:
@@ -46,8 +49,6 @@ def encodeData(infile, outfilename, encode):
                 if x > infile.size[0]-1:
                     x = 0
                     y += 1
-                    if y > infile.size[1]-1:
-                        raise Exception('Out of space in image')
 
     out = Image.fromarray(arr)
     out.save(outfilename)
