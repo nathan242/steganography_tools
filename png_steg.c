@@ -139,7 +139,7 @@ void decode_data(png_bytep **row_pointers, unsigned int height, size_t row_bytes
     }
 }
 
-void encode_data(png_bytep **row_pointers, unsigned int height, size_t row_bytes, char *data)
+int encode_data(png_bytep **row_pointers, unsigned int height, size_t row_bytes, char *data)
 {
     unsigned int bit;
     unsigned int y = 0;
@@ -149,6 +149,10 @@ void encode_data(png_bytep **row_pointers, unsigned int height, size_t row_bytes
         bit = 128;
 
         while (bit != 0) {
+            if (y == height) {
+                return 4;
+            }
+
             if ((*(row_pointers))[y][x] % 2 != ((data[i] & bit) == bit)) {
                 if ((*(row_pointers))[y][x] > 127) {
                     (*(row_pointers))[y][x]--;
@@ -165,14 +169,12 @@ void encode_data(png_bytep **row_pointers, unsigned int height, size_t row_bytes
 
             if (++x == row_bytes) {
                 x = 0;
-                if (++y == height) {
-                    return; // OUT OF SPACE;
-                }
+                ++y;
             }
         }
 
         if (data[i] == '\0') {
-            return;
+            return 0;
         }
     }
 }
@@ -254,7 +256,10 @@ int main(int argc, char *argv[])
                 return 2;
             }
 
-            encode_data(&row_pointers, height, row_bytes, data);
+            if ((ret = encode_data(&row_pointers, height, row_bytes, data)) != 0) {
+                fputs("Out of space in image!\n", stderr);
+                return ret;
+            }
 
             if ((ret = save_image(out_fp, &row_pointers, &width, &height, &bit_depth, &colour_type, &row_bytes)) != 0){
                 fputs("Cannot save PNG!\n", stderr);
@@ -273,6 +278,7 @@ int main(int argc, char *argv[])
             }
 
             printf("%i\n", (height*row_bytes)/8);
+            printf("%i\n", (height*row_bytes)%8);
 
             break;
     }
