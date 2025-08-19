@@ -57,7 +57,7 @@ int load_image(FILE *fp, png_bytep **row_pointers, unsigned int *width, unsigned
     }
 
     *row_pointers = malloc(sizeof(png_bytep) * *height);
-    for (int i = 0; i < *height; i++) {
+    for (unsigned int i = 0; i < *height; i++) {
         (*(row_pointers))[i] = malloc(*row_bytes);
     }
 
@@ -112,13 +112,22 @@ int save_image(FILE *fp, png_bytep **row_pointers, unsigned int *width, unsigned
     return 0;
 }
 
+void free_row_pointers(png_bytep **row_pointers, unsigned int height, size_t row_bytes)
+{
+    for (unsigned int i = 0; i < height; i++) {
+        free((*(row_pointers))[i]);
+    }
+
+    free(*row_pointers);
+}
+
 void decode_data(png_bytep **row_pointers, unsigned int height, size_t row_bytes)
 {
     char character = 0;
     unsigned int bit = 128;
 
-    for (int y = 0; y < height; y++) {
-        for (int x = 0; x < row_bytes; x++) {
+    for (unsigned int y = 0; y < height; y++) {
+        for (size_t x = 0; x < row_bytes; x++) {
             if ((*(row_pointers))[y][x] % 2 != 0) {
                 character += bit;
             }
@@ -210,12 +219,12 @@ int main(int argc, char *argv[])
 
     FILE *fp;
     FILE *out_fp;
-    unsigned int width;
-    unsigned int height;
-    int bit_depth;
-    int colour_type;
-    png_bytep *row_pointers;
-    size_t row_bytes;
+    unsigned int width = 0;
+    unsigned int height = 0;
+    int bit_depth = 0;
+    int colour_type = 0;
+    png_bytep *row_pointers = NULL;
+    size_t row_bytes = 0;
 
     while ((opt = getopt(argc, argv, "hso:d:")) != -1) {
         switch (opt) {
@@ -258,6 +267,7 @@ int main(int argc, char *argv[])
             if ((ret = load_image(fp, &row_pointers, &width, &height, &bit_depth, &colour_type, &row_bytes, 0)) != 0) {
                 fputs("Cannot load PNG!\n", stderr);
                 fclose(fp);
+                free_row_pointers(&row_pointers, height, row_bytes);
                 return ret;
             }
 
@@ -268,23 +278,27 @@ int main(int argc, char *argv[])
             if ((ret = load_image(fp, &row_pointers, &width, &height, &bit_depth, &colour_type, &row_bytes, 0)) != 0) {
                 fputs("Cannot load PNG!\n", stderr);
                 fclose(fp);
+                free_row_pointers(&row_pointers, height, row_bytes);
                 return ret;
             }
 
             out_fp = fopen(outfile, "w+");
             if (out_fp == NULL) {
                 fputs("Cannot open output file!\n", stderr);
+                free_row_pointers(&row_pointers, height, row_bytes);
                 return 2;
             }
 
             if ((ret = encode_data(&row_pointers, height, row_bytes, data)) != 0) {
                 fputs("Out of space in image!\n", stderr);
+                free_row_pointers(&row_pointers, height, row_bytes);
                 return ret;
             }
 
             if ((ret = save_image(out_fp, &row_pointers, &width, &height, &bit_depth, &colour_type, &row_bytes)) != 0){
                 fputs("Cannot save PNG!\n", stderr);
                 fclose(fp);
+                free_row_pointers(&row_pointers, height, row_bytes);
                 return ret;
             }
 
@@ -295,6 +309,7 @@ int main(int argc, char *argv[])
         case MODE_GET_CAPACITY:
             if ((ret = load_image(fp, &row_pointers, &width, &height, &bit_depth, &colour_type, &row_bytes, 1)) != 0) {
                 fputs("Cannot load PNG!\n", stderr);
+                free_row_pointers(&row_pointers, height, row_bytes);
                 return ret;
             }
 
@@ -302,6 +317,8 @@ int main(int argc, char *argv[])
 
             break;
     }
+
+    free_row_pointers(&row_pointers, height, row_bytes);
 
     fclose(fp);
 
