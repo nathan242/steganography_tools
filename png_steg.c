@@ -139,13 +139,34 @@ void decode_data(png_bytep **row_pointers, unsigned int height, size_t row_bytes
     }
 }
 
+char get_data_byte(char *data)
+{
+    static int i = 0;
+
+    return data[i++];
+}
+
+char get_stdin_byte()
+{
+    char byte;
+
+    if (read(STDIN_FILENO, &byte, 1) == 0) {
+        byte = '\0';
+    }
+
+    return byte;
+}
+
 int encode_data(png_bytep **row_pointers, unsigned int height, size_t row_bytes, char *data)
 {
+    char byte;
     unsigned int bit;
     unsigned int y = 0;
     unsigned int x = 0;
 
-    for (unsigned int i = 0;; i++) {
+    while (1) {
+        byte = data == NULL ? get_stdin_byte() : get_data_byte(data);
+
         bit = 128;
 
         while (bit != 0) {
@@ -153,7 +174,7 @@ int encode_data(png_bytep **row_pointers, unsigned int height, size_t row_bytes,
                 return 4;
             }
 
-            if ((*(row_pointers))[y][x] % 2 != ((data[i] & bit) == bit)) {
+            if ((*(row_pointers))[y][x] % 2 != ((byte & bit) == bit)) {
                 if ((*(row_pointers))[y][x] > 127) {
                     (*(row_pointers))[y][x]--;
                 } else {
@@ -173,7 +194,7 @@ int encode_data(png_bytep **row_pointers, unsigned int height, size_t row_bytes,
             }
         }
 
-        if (data[i] == '\0') {
+        if (byte == '\0') {
             return 0;
         }
     }
@@ -278,7 +299,6 @@ int main(int argc, char *argv[])
             }
 
             printf("%i\n", (height*row_bytes)/8);
-            printf("%i\n", (height*row_bytes)%8);
 
             break;
     }
